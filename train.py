@@ -37,18 +37,16 @@ for epoch in range(num_epochs):
     model.train()
     train_loss = 0
     for batch in train_dataloader:
-        images = batch['images'].to(device) # (batch_size, N, num_channels, H, W) where N is the number of images
-        batch_size, N, num_channels, H, W = images.shape
-        images = images.view(batch_size * N, num_channels, H, W) # (batch_size * N, num_channels, H, W)
-        findings = batch['findings'].to(device) # (batch_size, seq_len)
-        attn_mask = batch['attn_mask'].to(device) # (batch_size, seq_len)
+        images = batch['images'].to(device)          # (batch_size, N, num_channels, H, W) where N is the number of images
+        findings = batch['findings'].to(device)      # (batch_size, seq_len)
+        attn_mask = batch['attn_mask'].to(device)    # (batch_size, seq_len)
         findings = findings.masked_fill(findings == redacted_id, pad_token_id)  # replace [REDACTED] with pad token
         
         outputs = model(images, findings, attn_mask) # (batch_size, seq_len, vocab_size)
         
         vocab_size = outputs.size(-1)
-        o = outputs.view(-1, vocab_size) # (batch_size * seq_len, vocab_size)
-        target = findings.view(-1) # (batch_size * seq_len)
+        o = outputs.reshape(-1, vocab_size)          # (batch_size * seq_len, vocab_size)
+        target = findings.reshape(-1)                # (batch_size * seq_len)
         loss = loss_fn(o, target)
 
         optimizer.zero_grad()
@@ -67,8 +65,8 @@ for epoch in range(num_epochs):
         findings = findings.masked_fill(findings == redacted_id, pad_token_id)
         outputs = model(images, findings, attn_mask)
         vocab_size = outputs.size(-1)
-        o = outputs.view(-1, vocab_size)
-        target = findings.view(-1)
+        o = outputs.reshape(-1, vocab_size)
+        target = findings.reshape(-1)
         loss = loss_fn(o, target)
         val_loss += loss.item()
 

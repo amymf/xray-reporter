@@ -11,9 +11,9 @@ tokenizer = GPT2Tokenizer.from_pretrained("gpt2_prepared")
 transform = transforms.Compose([
     transforms.Resize(256), # resize short edge to 256 pixels
     transforms.CenterCrop(224), # crop to 224x224
-    transforms.Grayscale(num_output_channels=3), # convert to 3 channels, duplicate grayscale
+    transforms.Grayscale(num_output_channels=1),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225]), # ImageNet dist
+    transforms.Normalize([0.5], [0.5])   # normalize to [-1, 1] range for grayscale
 ])
 
 df['images'] = df['images'].apply(ast.literal_eval)  # Convert string representation of list to actual list

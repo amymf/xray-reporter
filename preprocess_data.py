@@ -1,4 +1,3 @@
-import os 
 import pandas as pd
 from collections import defaultdict
 import re
@@ -37,6 +36,10 @@ for uid, img_filenames in uid_to_imgs.items():
     indication = str(report.get('indication', ''))
     findings = str(report.get('findings', ''))
     impression = str(report.get('impression', ''))
+    if not findings or findings.strip().lower() in ["", "nan", "none"]:
+        print(f"Skipping: {repr(findings)}")
+        continue
+
     dataset.append({
         'uid': uid,
         'images': img_filenames,
@@ -46,5 +49,10 @@ for uid, img_filenames in uid_to_imgs.items():
     })
 
 # Check 
-print(dataset[0:5])
-print(len(dataset))
+# print(dataset[0:5])
+# print(len(dataset))
+
+# Save to CSV
+df = pd.DataFrame(dataset)
+df.to_csv('iuxray_dataset.csv', index=False)
+print("Dataset saved to iuxray_dataset.csv")

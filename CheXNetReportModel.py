@@ -20,7 +20,7 @@ class CheXNetEncoder(torch.nn.Module):
 
     def forward(self, x):
         x = self.layers(x)
-        return x # (batch_size, 1024)
+        return x # (batch_size, img_embed_dim) which is 1024 for CheXNet
 
 
 class CheXNetReportDecoder(torch.nn.Module):
@@ -32,6 +32,9 @@ class CheXNetReportDecoder(torch.nn.Module):
         self.image_projection = nn.Linear(img_embed_dim, prefix_len*self.gpt2_embed_dim)
     
     def forward(self, input_ids, attn_mask, image_embeds):
+        # input_ids: (batch_size, seq_len)
+        # attn_mask: (batch_size, seq_len)
+        # image_embeds: (batch_size, img_embed_dim)
         batch_size = input_ids.size(0)
 
         image_embeds = self.image_projection(image_embeds)                      # (batch_size, prefix_len * gpt2_embed_dim)
@@ -57,9 +60,14 @@ class CheXNetReportModel(torch.nn.Module):
         self.decoder = CheXNetReportDecoder(gpt2_model=gpt2_model, img_embed_dim=1024, prefix_len=10)
 
     def forward(self, images, input_ids, attn_mask):
-        image_embeds = self.encoder(images)                                     # (batch_size, img_embed_dim)
-        logits = self.decoder(input_ids, attn_mask, image_embeds)               # (batch_size, seq_len, vocab_size)
+        batch_size, N, num_channels, H, W = images.shape
+        images = images.view(batch_size * N, num_channels, H, W)        # (batch_size * N, num_channels, H, W)
+        image_embeds = self.encoder(images)                             # (batch_size * N, img_embed_dim)
+        # avg embedding across N images
+        image_embeds = image_embeds.view(batch_size, N, -1)             # (batch_size, N, img_embed_dim)
+        image_embeds = image_embeds.mean(dim=1)                         # (batch_size, img_embed_dim)
+        logits = self.decoder(input_ids, attn_mask, image_embeds)       # (batch_size, seq_len, vocab_size)
         return logits
 
 
-print(CheXNetReportModel(GPT2LMHeadModel.from_pretrained("gpt2")))
+# print(CheXNetReportModel(GPT2LMHeadModel.from_pretrained("gpt2_prepared")))

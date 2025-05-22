@@ -37,7 +37,7 @@ torch.manual_seed(41)
 
 gpt2 = GPT2LMHeadModel.from_pretrained("gpt2_prepared")
 model = CheXNetReportModel(gpt2_model=gpt2)
-model.load_state_dict(torch.load("model_final.pth", map_location=device))
+model.load_state_dict(torch.load("model_epoch_3.pth", map_location=device))
 model = model.to(device)
 model.eval()
 
@@ -53,12 +53,9 @@ max_len = 256
 for i, batch in enumerate(test_dataloader):
     images = batch['images'].to(device)
     targets = batch['findings'].to(device)
-    # targets = tokenizer.batch_decode(targets, skip_special_tokens=False)
-    print(f"Batch {i} - targets: {targets}")
     batch_size = images.size(0)
 
     input_ids = torch.full((images.size(0), 1), bos_token_id, dtype=torch.long).to(device)  # (batch_size, 1)
-    is_finished = torch.zeros(batch_size, dtype=torch.bool).to(device)
     predictions = []
 
     for _ in range(max_len):
@@ -80,7 +77,8 @@ for i, batch in enumerate(test_dataloader):
     for j in range(batch_size):
         pred = predictions[j]
         pred_text = tokenizer.decode(pred, skip_special_tokens=False)
-        # print(f"Generated report for batch {j}: {pred_text}")
+        print(f"Generated report for batch {i} image {j}: {pred_text}")
+    # Stop after first batch for testing
 
     if i == 0:
         break

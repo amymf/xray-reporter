@@ -83,18 +83,14 @@ for epoch in range(num_epochs):
             target_tokens = targets[0].cpu().tolist()
             pred_logits = outputs[0].argmax(dim=-1).cpu().tolist()
 
-            input_text = tokenizer.decode(input_tokens, skip_special_tokens=True)
-            target_text = tokenizer.decode(target_tokens, skip_special_tokens=True)
-            pred_text = tokenizer.decode(pred_logits, skip_special_tokens=True)
+            input_text = tokenizer.decode(input_tokens, skip_special_tokens=False)
+            target_text = tokenizer.decode(target_tokens, skip_special_tokens=False)
+            pred_text = tokenizer.decode(pred_logits, skip_special_tokens=False)
 
             print(f"Epoch {epoch+1} Batch {idx+1} Debug:")
-            print(f"Input Tokens : {input_tokens}")
             print(f"Input Text   : {input_text}")
-            print(f"Target Tokens: {target_tokens}")
             print(f"Target Text  : {target_text}")
-            print(f"Pred Tokens  : {pred_logits}")
             print(f"Pred Text    : {pred_text}")
-            print(f"Loss        : {loss.item():.4f}\n")
 
     val_loss /= len(val_dataloader)
 

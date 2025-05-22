@@ -1,12 +1,12 @@
 import pandas as pd
 from dataset import IUXRayDataset
 from transformers import GPT2Tokenizer
-from PIL import Image
 from torchvision import transforms
 import torch
+import ast
 
 df = pd.read_csv('iuxray_dataset.csv')
-image_dir = '../.cache/kagglehub/datasets/raddar/chest-xrays-indiana-university/versions/2/images'
+image_dir = '../.cache/kagglehub/datasets/raddar/chest-xrays-indiana-university/versions/2/images/images_normalized'
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2_prepared")
 transform = transforms.Compose([
     transforms.Resize(256), # resize short edge to 256 pixels
@@ -15,6 +15,8 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225]), # ImageNet dist
 ])
+
+df['images'] = df['images'].apply(ast.literal_eval)  # Convert string representation of list to actual list
 
 dataset = IUXRayDataset(df, image_dir, tokenizer, transform=transform)
 

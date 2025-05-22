@@ -1,11 +1,11 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-from model import CheXNetReportModel
+from CheXNetReportModel import CheXNetReportModel
 import torch 
-import wandb
+# import wandb
 from torch.utils.data import DataLoader
 from create_datasets import train_dataset, val_dataset
 
-wandb.init(project="CheXNet-report-generation")
+# wandb.init(project="CheXNet-report-generation")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -36,7 +36,9 @@ for epoch in range(num_epochs):
     model.train()
     train_loss = 0
     for batch in train_dataloader:
-        images = batch['images'].to(device) # (batch_size, num_channels, H, W)
+        images = batch['images'].to(device) # (batch_size, N, num_channels, H, W) where N is the number of images
+        batch_size, N, num_channels, H, W = images.shape
+        images = images.view(batch_size * N, num_channels, H, W) # (batch_size * N, num_channels, H, W)
         findings = batch['findings'].to(device) # (batch_size, seq_len)
         attn_mask = batch['attn_mask'].to(device) # (batch_size, seq_len)
 
@@ -72,9 +74,9 @@ for epoch in range(num_epochs):
     val_loss /= len(val_dataloader)
 
     print(f"Epoch {epoch + 1}/{num_epochs} - Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f}")
-    wandb.log({"train_loss": train_loss, "val_loss": val_loss})
+    # wandb.log({"train_loss": train_loss, "val_loss": val_loss})
     torch.save(model.state_dict(), f"model_epoch_{epoch + 1}.pth")
-    wandb.save(f"model_epoch_{epoch + 1}.pth")
+    # wandb.save(f"model_epoch_{epoch + 1}.pth")
 
 torch.save(model.state_dict(), "model_final.pth")
-wandb.save("model_final.pth")
+# wandb.save("model_final.pth")

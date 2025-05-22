@@ -1,6 +1,8 @@
 from torch.utils.data import Dataset
 from PIL import Image
-import pandas as pd
+import torch
+
+MAX_IMAGES = 2
 
 class IUXRayDataset(Dataset):
     def __init__(self, dataframe, image_dir, tokenizer, transform=None):
@@ -21,17 +23,21 @@ class IUXRayDataset(Dataset):
         impression = row['impression']
 
         # Load images
-        image_paths = [f"{self.image_dir}/{img}" for img in images]
+        image_paths = [f"{self.image_dir}/{img}" for img in images[:MAX_IMAGES]]
         images = [Image.open(img_path).convert("RGB") for img_path in image_paths]
-
         # Apply transformations if any
         if self.transform:
             images = [self.transform(img) for img in images]
+        # Stack images into a single tensor
+        images = torch.stack(images) # (N, num_channels, H, W) where N is the number of images
+        N = images.shape[0]
+        if N < MAX_IMAGES:
+            images = torch.cat([images, images], dim=0) # Duplicate as later we average (this assumes N=2)
 
         # Tokenize text data
-        indication_tokens = self.tokenizer(indication, return_tensors='pt', padding=True, truncation=True)
-        findings_tokens = self.tokenizer(findings, return_tensors='pt', padding=True, truncation=True)
-        impression_tokens = self.tokenizer(impression, return_tensors='pt', padding=True, truncation=True)
+        indication_tokens = self.tokenizer(indication, return_tensors='pt', padding='max_length', max_length=64, truncation=True)
+        findings_tokens = self.tokenizer(findings, return_tensors='pt', padding='max_length', max_length=256, truncation=True)
+        impression_tokens = self.tokenizer(impression, return_tensors='pt', padding='max_length', max_length=128, truncation=True)
 
         return {
             'uid': uid,

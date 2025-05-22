@@ -3,7 +3,6 @@ import pandas as pd
 from collections import defaultdict
 import re
 
-images_dir = '../.cache/kagglehub/datasets/raddar/chest-xrays-indiana-university/versions/2/images'
 projections_path = '../.cache/kagglehub/datasets/raddar/chest-xrays-indiana-university/versions/2/indiana_projections.csv'
 reports_path = '../.cache/kagglehub/datasets/raddar/chest-xrays-indiana-university/versions/2/indiana_reports.csv'
 

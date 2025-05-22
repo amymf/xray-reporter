@@ -19,9 +19,9 @@ class IUXRayDataset(Dataset):
         row = self.dataframe.iloc[idx]
         uid = row['uid']
         images = row['images'][:MAX_IMAGES-1]
-        indication = str(row['indication']) if not pd.isna(row['indication']) else ""
+        # indication = str(row['indication']) if not pd.isna(row['indication']) else ""
         findings = str(row['findings']) if not pd.isna(row['findings']) else ""
-        impression = str(row['impression']) if not pd.isna(row['impression']) else ""
+        # impression = str(row['impression']) if not pd.isna(row['impression']) else ""
 
 
         # Load images
@@ -40,8 +40,9 @@ class IUXRayDataset(Dataset):
 
         # Tokenize text data
         # indication_tokens = self.tokenizer(indication, return_tensors='pt', padding='max_length', max_length=64, truncation=True)
+        findings = findings + self.tokenizer.eos_token
         findings_tokens = self.tokenizer(findings, return_tensors='pt', padding='max_length', max_length=256, truncation=True)
-        impression_tokens = self.tokenizer(impression, return_tensors='pt', padding='max_length', max_length=128, truncation=True)
+        # impression_tokens = self.tokenizer(impression, return_tensors='pt', padding='max_length', max_length=128, truncation=True)
 
         return {
             'uid': uid,

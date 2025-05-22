@@ -17,6 +17,9 @@ transform = transforms.Compose([
 ])
 
 df['images'] = df['images'].apply(ast.literal_eval)  # Convert string representation of list to actual list
+df['indication'] = df['indication'].fillna('').astype(str)
+df['findings'] = df['findings'].fillna('').astype(str)
+df['impression'] = df['impression'].fillna('').astype(str)
 
 dataset = IUXRayDataset(df, image_dir, tokenizer, transform=transform)
 

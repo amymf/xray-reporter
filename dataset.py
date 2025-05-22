@@ -18,9 +18,10 @@ class IUXRayDataset(Dataset):
         row = self.dataframe.iloc[idx]
         uid = row['uid']
         images = row['images']
-        indication = row['indication']
-        findings = row['findings']
-        impression = row['impression']
+        indication = str(row['indication']) if row['indication'] else ""
+        findings = str(row['findings']) if row['findings'] else ""
+        impression = str(row['impression']) if row['impression'] else ""
+
 
         # Load images
         image_paths = [f"{self.image_dir}/{img}" for img in images[:MAX_IMAGES]]
@@ -42,7 +43,9 @@ class IUXRayDataset(Dataset):
         return {
             'uid': uid,
             'images': images,
-            'indication': indication_tokens,
-            'findings': findings_tokens,
-            'impression': impression_tokens
+            'indication': indication_tokens['input_ids'].squeeze(0),
+            'findings': findings_tokens['input_ids'].squeeze(0),
+            'attn_mask': findings_tokens['attention_mask'].squeeze(0),
+            'impression': impression_tokens['input_ids'].squeeze(0)
         }
+    

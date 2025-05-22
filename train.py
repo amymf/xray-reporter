@@ -26,6 +26,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2_prepared")
 pad_token_id = tokenizer.pad_token_id
 redacted_id = tokenizer.convert_tokens_to_ids('[REDACTED]')
+print(f"Pad token id: {pad_token_id}, Redacted token id: {redacted_id}")
 
 loss_fn = torch.nn.CrossEntropyLoss(ignore_index=pad_token_id)
 
@@ -41,8 +42,8 @@ for epoch in range(num_epochs):
         images = images.view(batch_size * N, num_channels, H, W) # (batch_size * N, num_channels, H, W)
         findings = batch['findings'].to(device) # (batch_size, seq_len)
         attn_mask = batch['attn_mask'].to(device) # (batch_size, seq_len)
-
         findings = findings.masked_fill(findings == redacted_id, pad_token_id)  # replace [REDACTED] with pad token
+        
         outputs = model(images, findings, attn_mask) # (batch_size, seq_len, vocab_size)
         
         vocab_size = outputs.size(-1)

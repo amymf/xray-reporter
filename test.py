@@ -5,31 +5,6 @@ from torch.utils.data import DataLoader
 from create_datasets import test_dataset
 import torch.nn.functional as F
 
-def top_k_top_p_filtering(logits, top_k=50, top_p=0.9, temperature=0.8):
-    """Apply top-k and top-p filtering to logits"""
-    # Apply temperature
-    logits = logits / temperature
-
-    # Top-k filtering
-    if top_k > 0:
-        top_k = min(top_k, logits.size(-1))
-        indices_to_remove = logits < torch.topk(logits, top_k)[0][..., -1, None]
-        logits[indices_to_remove] = -float('Inf')
-
-    # Top-p filtering
-    if top_p > 0.0:
-        sorted_logits, sorted_indices = torch.sort(logits, descending=True)
-        cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
-        
-        sorted_indices_to_remove = cumulative_probs > top_p
-        sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
-        sorted_indices_to_remove[..., 0] = 0
-        
-        indices_to_remove = sorted_indices_to_remove.scatter(dim=-1, index=sorted_indices, src=sorted_indices_to_remove)
-        logits[indices_to_remove] = -float('Inf')
-
-    return logits
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
@@ -37,7 +12,7 @@ torch.manual_seed(41)
 
 gpt2 = GPT2LMHeadModel.from_pretrained("gpt2_prepared")
 model = CheXNetReportModel(gpt2_model=gpt2)
-model.load_state_dict(torch.load("model_epoch_3.pth", map_location=device))
+model.load_state_dict(torch.load("model_epoch_9.pth", map_location=device))
 model = model.to(device)
 model.eval()
 
@@ -57,6 +32,7 @@ for i, batch in enumerate(test_dataloader):
 
     input_ids = torch.full((images.size(0), 1), bos_token_id, dtype=torch.long).to(device)  # (batch_size, 1)
     predictions = []
+    finished = torch.zeros(batch_size, dtype=torch.bool).to(device)
 
     for _ in range(max_len):
         attn_mask = torch.ones(input_ids.size(), dtype=torch.long).to(device)
@@ -66,9 +42,16 @@ for i, batch in enumerate(test_dataloader):
         logits = outputs[:, -1, :]
         probs = torch.softmax(logits, dim=-1)
         next_token = torch.multinomial(probs, num_samples=1)
+        next_token = torch.where(finished, torch.full((batch_size,), pad_token_id, dtype=torch.long, device=device), next_token.squeeze(1))
+        # Uncomment the following line to use argmax instead of sampling
         # next_token = torch.argmax(logits, dim=-1, keepdim=True)
 
-        input_ids = torch.cat([input_ids, next_token], dim=1)
+        input_ids = torch.cat([input_ids, next_token.unsqueeze(1)], dim=1)
+
+        finished |= next_token == eos_token_id
+
+        if finished.all():
+            break
 
     predictions = input_ids[:, 1:]  # remove bos
 
@@ -76,9 +59,11 @@ for i, batch in enumerate(test_dataloader):
     predictions = predictions.cpu().numpy()
     for j in range(batch_size):
         pred = predictions[j]
-        pred_text = tokenizer.decode(pred, skip_special_tokens=False)
+        pred_text = tokenizer.decode(pred, skip_special_tokens=True)
+        target_text = tokenizer.decode(targets[j], skip_special_tokens=True)
+        print(f"Target report for batch {i} image {j}: {target_text}")
         print(f"Generated report for batch {i} image {j}: {pred_text}")
     # Stop after first batch for testing
 
-    if i == 0:
-        break
+    # if i == 0:
+    #     break

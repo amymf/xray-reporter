@@ -5,7 +5,7 @@ import wandb
 from torch.utils.data import DataLoader
 from create_datasets import train_dataset, val_dataset
 
-wandb.init(project="CheXNet-report-generation")
+wandb.init(project="CheXNet-report-generation-prefix-tuning")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -31,7 +31,7 @@ print(f"Pad token id: {pad_token_id}, Redacted token id: {redacted_id}")
 
 loss_fn = torch.nn.CrossEntropyLoss(ignore_index=pad_token_id)
 
-num_epochs = 10
+num_epochs = 30
 
 for epoch in range(num_epochs):
     model.train()
@@ -83,12 +83,10 @@ for epoch in range(num_epochs):
             target_tokens = targets[0].cpu().tolist()
             pred_logits = outputs[0].argmax(dim=-1).cpu().tolist()
 
-            input_text = tokenizer.decode(input_tokens, skip_special_tokens=False)
-            target_text = tokenizer.decode(target_tokens, skip_special_tokens=False)
-            pred_text = tokenizer.decode(pred_logits, skip_special_tokens=False)
+            target_text = tokenizer.decode(target_tokens, skip_special_tokens=True)
+            pred_text = tokenizer.decode(pred_logits, skip_special_tokens=True)
 
             print(f"Epoch {epoch+1} Batch {idx+1} Debug:")
-            print(f"Input Text   : {input_text}")
             print(f"Target Text  : {target_text}")
             print(f"Pred Text    : {pred_text}")
 

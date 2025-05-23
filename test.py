@@ -12,7 +12,7 @@ torch.manual_seed(41)
 
 gpt2 = GPT2LMHeadModel.from_pretrained("gpt2_prepared")
 model = CheXNetReportModel(gpt2_model=gpt2)
-model.load_state_dict(torch.load("model_epoch_9.pth", map_location=device))
+model.load_state_dict(torch.load("model_epoch_10.pth", map_location=device))
 model = model.to(device)
 model.eval()
 

@@ -1,7 +1,6 @@
 import torch
 import torchxrayvision as xrv
 import torch.nn as nn
-from transformers import GPT2LMHeadModel
 
 class CheXNetEncoder(torch.nn.Module):
     def __init__(self):
@@ -29,6 +28,9 @@ class CheXNetReportDecoder(torch.nn.Module):
         self.prefix_len = prefix_len
         self.gpt2 = gpt2_model
         self.gpt2_embed_dim = self.gpt2.config.n_embd
+        # Freeze gpt2 - prefix tuning
+        for param in self.gpt2.parameters():
+            param.requires_grad = False
         self.image_projection = nn.Linear(img_embed_dim, prefix_len*self.gpt2_embed_dim)
     
     def forward(self, input_ids, attn_mask, image_embeds):

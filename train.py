@@ -21,7 +21,7 @@ model.train()
 train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=4, shuffle=False)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=1e-2)
 
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2_prepared")
 pad_token_id = tokenizer.pad_token_id
@@ -77,18 +77,6 @@ for epoch in range(num_epochs):
         target = targets.reshape(-1)
         loss = loss_fn(o, target)
         val_loss += loss.item()
-
-        if idx == 0:
-            input_tokens = input_ids[0].cpu().tolist()
-            target_tokens = targets[0].cpu().tolist()
-            pred_logits = outputs[0].argmax(dim=-1).cpu().tolist()
-
-            target_text = tokenizer.decode(target_tokens, skip_special_tokens=True)
-            pred_text = tokenizer.decode(pred_logits, skip_special_tokens=True)
-
-            print(f"Epoch {epoch+1} Batch {idx+1} Debug:")
-            print(f"Target Text  : {target_text}")
-            print(f"Pred Text    : {pred_text}")
 
     val_loss /= len(val_dataloader)
 
